@@ -86,16 +86,26 @@ class AECLoader(object):
     def load_train(self, mode, idx=None):
 
         if mode == 'real':
-            return self.load_train_real(idx)
+            return self.load_train_real_or_simu(self.get_real, idx)
 
         elif mode == 'simu':
-            return self.load_train_simu(idx)
+            return self.load_train_real_or_simu(self.get_simu, idx)
 
         elif mode == 'hard':
             return self.load_train_hard(idx)
 
-    def load_train_real(self, idx=None):
+    def get_real(self, idx):
+        name = self.d_train_real[idx].replace('mic.wav', '')
+        x, fs = audioread(name + 'lpb.wav')
+        d, fs = audioread(name + 'mic.wav')
+        return x, fs, d, fs
 
+    def get_simu(self, idx):
+        x, fs = audioread(self.x_train_simu[idx])
+        d, fs = audioread(self.d_train_simu[idx])
+        return x, fs, d, fs
+
+    def load_train_real_or_simu(self, get_by_idx, idx=None):
         if idx is not None:
             idx = np.mod(idx, len(self.d_train_real))
         else:
@@ -103,10 +113,7 @@ class AECLoader(object):
 
         valid = False
         while not valid:
-
-            name = self.d_train_real[idx].replace('mic.wav', '')
-            x, fs = audioread(name + 'lpb.wav')
-            d, fs = audioread(name + 'mic.wav')
+            x, fs, d, fs = get_by_idx(idx)
 
             x = self.hp_filter(x)
             d = self.hp_filter(d)
@@ -129,38 +136,22 @@ class AECLoader(object):
 
         return x, d
 
-    def load_train_simu(self, idx=None):
+    def load_from(self, name):
+        x, fs = audioread(name + 'lpb.wav')
+        d, fs = audioread(name + 'mic.wav')
 
-        if idx is not None:
-            idx = np.mod(idx, len(self.x_train_simu))
-        else:
-            idx = np.random.choice(len(self.x_train_simu))
+        x = self.hp_filter(x)
+        d = self.hp_filter(d)
+        d = self.lp_filter(d)
 
-        valid = False
-        while not valid:
-
-            x, fs = audioread(self.x_train_simu[idx])
-            d, fs = audioread(self.d_train_simu[idx])
-
-            x = self.hp_filter(x)
-            d = self.hp_filter(d)
-            d = self.lp_filter(d)
-
-            samples = min(len(x), len(d))
-            x = x[:samples]
-            d = d[:samples]
-
-            Pd = 10 * np.log10(np.mean(d ** 2))
-            if Pd > -40:
-                valid = True
-            else:
-                idx = np.random.choice(len(self.x_train_simu))
+        samples = min(len(x), len(d))
+        x = x[:samples]
+        d = d[:samples]
 
         Pd = 10 * np.log10(np.mean(d ** 2))
         G = np.power(10, (-26 - Pd) / 20)
         x *= G
         d *= G
-
         return x, d
 
     def load_train_hard(self, idx=None):
@@ -171,63 +162,17 @@ class AECLoader(object):
             idx = np.random.choice(len(self.d_train_hard))
 
         name = self.d_train_hard[idx].replace('mic.wav', '')
-        x, fs = audioread(name + 'lpb.wav')
-        d, fs = audioread(name + 'mic.wav')
-
-        x = self.hp_filter(x)
-        d = self.hp_filter(d)
-        d = self.lp_filter(d)
-
-        samples = min(len(x), len(d))
-        x = x[:samples]
-        d = d[:samples]
-
-        Pd = 10 * np.log10(np.mean(d ** 2))
-        G = np.power(10, (-26 - Pd) / 20)
-        x *= G
-        d *= G
-
-        return x, d
+        return self.load_from(name)
 
     def load_test(self, idx):
 
         name = self.d_test[idx].replace('mic.wav', '')
-        x, fs = audioread(name + 'lpb.wav')
-        d, fs = audioread(name + 'mic.wav')
-
-        x = self.hp_filter(x)
-        d = self.hp_filter(d)
-        d = self.lp_filter(d)
-
-        samples = min(len(x), len(d))
-        x = x[:samples]
-        d = d[:samples]
-
-        G = 0.99 / np.max(np.abs(d))
-        x *= G
-        d *= G
-
-        return x, d
+        return self.load_from(name)
 
     def load_test_blind(self, idx):
 
         name = self.d_test_blind[idx].replace('mic.wav', '')
-        x, fs = audioread(name + 'lpb.wav')
-        d, fs = audioread(name + 'mic.wav')
-
-        x = self.hp_filter(x)
-        d = self.hp_filter(d)
-        d = self.lp_filter(d)
-
-        samples = min(len(x), len(d))
-        x = x[:samples]
-        d = d[:samples]
-
-        G = 0.99 / np.max(np.abs(d))
-        x *= G
-        d *= G
-
-        return x, d
+        return self.load_from(name)
 
     def find_idx_from_testset(self, name):
 

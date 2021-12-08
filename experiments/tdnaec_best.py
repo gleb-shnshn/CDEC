@@ -189,7 +189,7 @@ class TDNAEC:
             x, y, d, e, s = self.fgen.load_train(self.nbatch)
             self.model.fit([x, y, d, e, s], None, batch_size=self.nbatch, epochs=1, verbose=0, callbacks=[self.logger])
 
-            if (i % 20) == 0:
+            if i % 20 == 0:
                 self.save_prediction()
 
     def test_model(self, ):

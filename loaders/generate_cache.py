@@ -120,8 +120,8 @@ class CacheGenerator:
 
         return x, y, d, e, s
 
-    def generate_test(self, idx, blind):
-        if blind:
+    def generate_test(self, idx, path):
+        if path == "test_blind":
             x, d = self.aec_loader.load_test_blind(idx)
         else:
             x, d = self.aec_loader.load_test(idx)
@@ -152,12 +152,11 @@ class CacheGenerator:
                     save_numpy_to_mat(name, data)
                     print('writing train file:', idx, '/', self.train_set_length)
 
-    def cache_set(self, length, blind=False):
+    def cache_set(self, length, path):
 
-        prefix = blind * "_blind"
         for idx in range(length):
-            name = f"{self.cache_path}/cache/test{prefix}/{idx:04d}.mat"
-            x, y, d, e = self.generate_test(idx, blind)
+            name = f"{self.cache_path}/cache/{path}/{idx:04d}.mat"
+            x, y, d, e = self.generate_test(idx, path)
             data = {
                 'x': x,
                 'y': y,
@@ -168,13 +167,13 @@ class CacheGenerator:
             }
             mkdir(name)
             save_numpy_to_mat(name, data)
-            print('writing ' + prefix + 'test file:', idx, '/', length)
+            print('writing ' + path + ' file:', idx, '/', length)
 
     def cache_test_set(self):
-        self.cache_set(self.test_set_length, blind=False)
+        self.cache_set(self.test_set_length, "test")
 
     def cache_blind_test_set(self):
-        self.cache_set(self.blind_test_set_length, blind=True)
+        self.cache_set(self.blind_test_set_length, "test_blind")
 
 
 if __name__ == "__main__":

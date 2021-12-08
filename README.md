@@ -95,7 +95,7 @@ Training
 To train the CDEC model, use:
 ```
 cd experiments
-python tdnaec_best.py train
+python tdnaec_best.py train --cache_path ./output
 ```
 
 
@@ -107,7 +107,7 @@ Test
 To test the model on the blind test set, use:
 ```
 cd experiments
-python tdnaec_best.py test
+python tdnaec_best.py test --cache_path ./output
 ```
 
 

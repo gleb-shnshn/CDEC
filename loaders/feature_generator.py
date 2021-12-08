@@ -6,11 +6,12 @@ import sys
 
 import numpy as np
 
-sys.path.append(os.path.abspath('../'))
+from algorithms.audio_processing import create_mel_filterbank
+from algorithms.ssaec_fast import SSAECFast
+from loaders.aec_loader import AECLoader
+from utils.mat_helpers import load_numpy_from_mat, save_numpy_to_mat
 
-from utils.mat_helpers import *
-from algorithms.audio_processing import *
-from algorithms.ssaec_fast import *
+sys.path.append(os.path.abspath('../'))
 
 
 class FeatureGenerator:
@@ -35,21 +36,6 @@ class FeatureGenerator:
         self.Q_long = create_mel_filterbank(nbin=513, fs=16e3, nband=self.nband)
         self.Q_short = create_mel_filterbank(nbin=129, fs=16e3, nband=self.nband)
 
-    def compensate_delay(self, x, d):
-
-        Fx = rfft(x)
-        Fd = rfft(d)
-
-        Phi = Fd * np.conj(Fx)
-        Phi /= np.abs(Phi) + 1e-3
-        Phi[0] = 0
-        tmp = irfft(Phi)
-        tau = np.argmax(np.abs(tmp))
-        x = np.roll(x, tau)
-        # print(tau/self.fs)
-
-        return x
-
     # scenarios = ['nearend', 'farend', 'doubletalk']
     # modes = ['real','simu','hard']
     def load_train(self, nbatch=1, mode=None, scenario=None, idx=None, p_modes=[0.3, 0.3, 0.4],
@@ -67,17 +53,17 @@ class FeatureGenerator:
 
         for b in range(nbatch):
 
-            if mode0 == None:
+            if mode0 is None:
                 mode = np.random.choice(self.modes, p=p_modes)
             else:
                 mode = mode0
 
-            if scenario0 == None:
+            if scenario0 is None:
                 scenario = np.random.choice(self.scenarios, p=p_scenarios)
             else:
                 scenario = scenario0
 
-            if idx0 == None:
+            if idx0 is None:
                 idx = np.random.choice(self.train_set_length)
             else:
                 idx = idx0

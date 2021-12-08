@@ -6,22 +6,23 @@ import os
 import sys
 
 import numpy as np
+import tensorflow as tf
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from keras.models import Model
 from keras.layers import Dense, GRU, Input, Lambda, Concatenate, LayerNormalization
-import tensorflow as tf
-
-sys.path.append(os.path.abspath('../'))
-from loaders.feature_generator import feature_generator
-from utils.mat_helpers import *
-from utils.keras_helpers import *
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 np.set_printoptions(precision=3, threshold=3, edgeitems=3)
+
+sys.path.append(os.path.abspath('../'))
+
+from loaders.feature_generator import FeatureGenerator
+from utils.keras_helpers import Logger, log10
+from utils.mat_helpers import save_numpy_to_mat
 
 
 class TDNAEC:
@@ -34,7 +35,7 @@ class TDNAEC:
         self.predictions_file = '../predictions/' + self.name + '.mat'
         self.logfile = self.name + '_logfile.txt'
 
-        self.fgen = feature_generator()
+        self.fgen = FeatureGenerator()
         self.logger = Logger(self.name)
         self.samples = self.fgen.samples
         self.silence = self.fgen.silence

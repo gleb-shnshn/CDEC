@@ -8,11 +8,11 @@ import numpy as np
 
 sys.path.append(os.path.abspath('../'))
 
+from algorithms.audio_processing import mkdir, compensate_delay
+from algorithms.ssaec_fast import SSAECFast
+from utils.mat_helpers import save_numpy_to_mat
 from loaders.aec_loader import AECLoader
 from loaders.audio_loader import AudioLoader
-from utils.mat_helpers import *
-from algorithms.audio_processing import *
-from algorithms.ssaec_fast import *
 
 
 class CacheGenerator:
@@ -56,21 +56,6 @@ class CacheGenerator:
                 n = n1
 
         return x0, d0
-
-    def compensate_delay(self, x, d):
-
-        Fx = rfft(x)
-        Fd = rfft(d)
-
-        Phi = Fd * np.conj(Fx)
-        Phi /= np.abs(Phi) + 1e-3
-        Phi[0] = 0
-        tmp = irfft(Phi)
-        tau = np.argmax(np.abs(tmp))
-        x = np.roll(x, tau)
-        # print(tau/self.fs)
-
-        return x
 
     def generate_train(self, mode, scenario, idx):
 
@@ -124,7 +109,7 @@ class CacheGenerator:
             d = d + s + n
 
         # compensate bulk delay
-        x = self.compensate_delay(x, d)
+        x = compensate_delay(x, d)
 
         # perform EC with random starting position
         start = np.random.choice(self.samples)
@@ -139,7 +124,7 @@ class CacheGenerator:
     def generate_test(self, idx):
 
         x, d = self.aec_loader.load_test(idx)
-        x = self.compensate_delay(x, d)
+        x = compensate_delay(x, d)
         e, y = self.ssaec.run(x, d, repeats=2)
 
         return x, y, d, e
@@ -147,7 +132,7 @@ class CacheGenerator:
     def generate_blind_test(self, idx):
 
         x, d = self.aec_loader.load_test_blind(idx)
-        x = self.compensate_delay(x, d)
+        x = compensate_delay(x, d)
         e, y = self.ssaec.run(x, d, repeats=2)
 
         return x, y, d, e

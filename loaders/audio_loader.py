@@ -9,8 +9,7 @@ import numpy as np
 
 sys.path.append(os.path.abspath('../'))
 
-from algorithms.audio_processing import *
-from utils.mat_helpers import *
+from algorithms.audio_processing import audioread, mstft, apply_highpass_filter, mistft, mel_to_hz, hz_to_mel
 
 
 class AudioLoader(object):

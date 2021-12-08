@@ -194,5 +194,20 @@ def create_mel_filterbank(nbin=513, fs=16e3, nband=40):
     return filterbank  # shape = (nband, nbin)
 
 
+def compensate_delay(x, d):
+    Fx = rfft(x)
+    Fd = rfft(d)
+
+    Phi = Fd * np.conj(Fx)
+    Phi /= np.abs(Phi) + 1e-3
+    Phi[0] = 0
+    tmp = irfft(Phi)
+    tau = np.argmax(np.abs(tmp))
+    x = np.roll(x, tau)
+    # print(tau/self.fs)
+
+    return x
+
+
 def mkdir(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)

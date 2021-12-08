@@ -9,14 +9,14 @@ import numpy as np
 from algorithms.audio_processing import create_mel_filterbank
 from algorithms.ssaec_fast import SSAECFast
 from loaders.aec_loader import AECLoader
-from utils.mat_helpers import load_numpy_from_mat, save_numpy_to_mat
+from utils.mat_helpers import load_numpy_from_mat
 
 sys.path.append(os.path.abspath('../'))
 
 
 class FeatureGenerator:
 
-    def __init__(self, ):
+    def __init__(self, cache_path):
 
         self.aec_loader = AECLoader(name='aec')
         self.ssaec = SSAECFast(wlen=512, tail_length=0.250)
@@ -26,6 +26,7 @@ class FeatureGenerator:
         self.silence = int(self.fs * 5)
 
         self.dataset_dir = self.aec_loader.dataset_dir
+        self.cache_path = cache_path
         self.scenarios = ['nearend', 'farend', 'doubletalk']
         self.modes = ['real', 'simu', 'hard']
         self.train_set_length = 5000
@@ -67,7 +68,7 @@ class FeatureGenerator:
                 idx = np.random.choice(self.train_set_length)
             else:
                 idx = idx0
-            name = self.dataset_dir + 'train_cache/' + mode + '/' + scenario + '/' + '{:04d}'.format(idx) + '.mat'
+            name = f"{self.cache_path}/cache/train/{mode}/{scenario}/{idx:04d}.mat"
             data = load_numpy_from_mat(name)
 
             x[b, :] = data['x'][0, self.silence:]
@@ -97,35 +98,27 @@ class FeatureGenerator:
 
     def load_test(self, idx, nbatch=1):
 
-        name = self.dataset_dir + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
+        name = f"{self.cache_path}/cache/test/{idx:04d}.mat"
         return self.load_from_dir(name, nbatch)
 
     def load_test_blind(self, idx, nbatch=1):
 
-        name = self.dataset_dir + 'blind_test_cache/' + '{:04d}'.format(idx) + '.mat'
+        name = f"{self.cache_path}/cache/test_blind/{idx:04d}.mat"
         return self.load_from_dir(name, nbatch)
 
     def write_enhanced(self, x, idx, experiment_name):
 
         # batchsize = 1
-        self.aec_loader.write_enhanced(x[0, :], idx, experiment_name)
+        self.aec_loader.write_enhanced(x[0, :], idx, experiment_name, self.aec_loader.test)
 
     def write_enhanced_blind(self, x, idx, experiment_name):
-
         # batchsize = 1
-        self.aec_loader.write_enhanced_blind(x[0, :], idx, experiment_name)
-
-    def load_valid(self, nbatch):
-
-        idx = self.aec_loader.find_idx_from_testset('8WdP6ehkpkiy5AHUg0DnNg_doubletalk_with_movement')
-        name = self.dataset_dir + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
-
-        return self.load_from_dir(name, nbatch)
+        self.aec_loader.write_enhanced(x[0, :], idx, experiment_name, self.aec_loader.test_blind)
 
     def write_aec_only(self, ):
 
         for idx in range(self.test_set_length):
-            name = self.dataset_dir + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
+            name = f"{self.cache_path}/cache/test/{idx:04d}.mat"
             data = load_numpy_from_mat(name)
             e = data['e'][0, :]  # shape = (samples,)
             self.aec_loader.write_enhanced(e, idx, 'aec_only')
@@ -134,43 +127,8 @@ class FeatureGenerator:
     def write_aec_only_blind(self, ):
 
         for idx in range(self.blind_test_set_length):
-            name = self.dataset_dir + 'blind_test_cache/' + '{:04d}'.format(idx) + '.mat'
+            name = f"{self.cache_path}/cache/test_blind/{idx:04d}.mat"
             data = load_numpy_from_mat(name)
             e = data['e'][0, :]  # shape = (samples,)
             self.aec_loader.write_enhanced_blind(e, idx, 'aec_only')
             print('writing file:', idx, '/', self.blind_test_set_length)
-
-
-if __name__ == "__main__":
-    fgen = FeatureGenerator()
-
-    # fgen.write_aec_only_blind()
-    # quit()
-
-    Q1 = create_mel_filterbank(nbin=513, fs=16e3, nband=25)
-    Q2 = create_mel_filterbank(nbin=129, fs=16e3, nband=25)
-
-    data = {
-        'Q1': Q1,
-        'Q2': Q2,
-    }
-    save_numpy_to_mat('../matlab/test.mat', data)
-    quit()
-
-    # t0 = time.time()
-    # x,y,d,e,s = fgen.load_train(3)
-    # t1 = time.time()
-    # print(t1-t0)
-    # quit()
-
-    idx = fgen.aec_loader.find_idx_from_testset('n2MtzNsbnkudT1iT1oZXNQ')
-    x, y, d, e, s = fgen.load_test(idx)
-
-    data = {
-        'y': y,
-        'x': x,
-        'd': d,
-        'e': e,
-        's': s,
-    }
-    save_numpy_to_mat('../matlab/fgen_check.mat', data)

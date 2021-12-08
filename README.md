@@ -54,14 +54,34 @@ Expected structure:
             - mic
     - noise
     - doubletalk
-        
 ```
 
 
 Prior to training, you need to create a cache which will perform the linear AEC on 10,000 randomly selected mixtures. This is done with:
 ```
 cd loaders
-python generate_cache.py --dataset_path ./Interspeech_AEC_Challenge_2021/datasets
+python generate_cache.py --dataset_path ./Interspeech_AEC_Challenge_2021/datasets --cache_path ./output
+```
+
+It will create following structure:
+```
+- cache_path
+    - cache
+        - train
+            - real
+                - nearend
+                - farend
+                - doubletalk
+            - simu
+                - nearend
+                - farend
+                - doubletalk
+            - hard
+                - nearend
+                - farend
+                - doubletalk
+        - test
+        - test_blind
 ```
 
 To change the cache size, the variable 'self.train_set_length = 10000' in './loaders/generate_cache.py' needs to be changed accordingly.

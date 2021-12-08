@@ -111,36 +111,12 @@ class AECLoader:
 
         return self.load_from("test_blind", self.test_blind, idx)
 
-    def find_idx_from_testset(self, name):
-
-        for idx, f in enumerate(self.test):
-            if name in f:
-                return idx
-
-        return None
-
-    def find_idx_from_blind_testset(self, name):
-
-        for idx, f in enumerate(self.test_blind):
-            if name in f:
-                return idx
-
-        return None
-
-    def write_enhanced(self, x, idx, subfolder):
+    def write_enhanced(self, x, idx, subfolder, dataset):
 
         G = 0.99 / np.max(np.abs(x))
         x *= np.minimum(G, 1)
 
-        name = f"{self.dataset_dir}/submission/{subfolder}/{self.test[idx]}"
+        name = f"{self.dataset_dir}/submission/{subfolder}/{dataset[idx]}"
         mkdir(name)
         audiowrite(x, name)
 
-    def write_enhanced_blind(self, x, idx, subfolder):
-
-        G = 0.99 / np.max(np.abs(x))
-        x *= np.minimum(G, 1)
-
-        name = f"{self.dataset_dir}/submission/{subfolder}/{self.test_blind[idx]}"
-        mkdir(name)
-        audiowrite(x, name)

@@ -18,15 +18,13 @@ from loaders.audio_loader import AudioLoader
 
 class CacheGenerator:
 
-    def __init__(self, dataset_path):
-
+    def __init__(self, dataset_path, cache_path):
+        self.cache_path = cache_path
         self.aec_loader = AECLoader(name='aec_loader', dataset_dir=f"{dataset_path}/aec")
         self.dt_loader = AudioLoader(name='doubletalk', path=f"{dataset_path}/doubletalk")
         self.noise_loader = AudioLoader(name='noise', path=f"{dataset_path}/noise")
         self.noise_loader.cache_files()
         self.ssaec = SSAECFast(wlen=512, tail_length=0.250)
-
-        self.timestamp = os.path.getmtime(sys.argv[0])  # timestamp of this script
 
         self.fs = self.aec_loader.fs
         self.samples = int(self.fs * 15)
@@ -137,12 +135,7 @@ class CacheGenerator:
         for mode in self.modes:
             for scenario in self.scenarios:
                 for idx in range(self.train_set_length):
-
-                    name = self.dataset_dir + 'train_cache/' + mode + '/' + scenario + '/' + '{:04d}'.format(
-                        idx) + '.mat'
-                    if os.path.isfile(name):
-                        if self.timestamp < os.path.getmtime(name):
-                            continue
+                    name = f"{self.cache_path}/cache/train/{mode}/{scenario}/{idx:04d}.mat"
 
                     x, y, d, e, s = self.generate_train(mode, scenario, idx)
                     data = {
@@ -161,12 +154,9 @@ class CacheGenerator:
 
     def cache_set(self, length, blind=False):
 
-        prefix = blind * "blind_"
+        prefix = blind * "_blind"
         for idx in range(length):
-            name = self.dataset_dir + prefix + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
-            if os.path.isfile(name):
-                if self.timestamp < os.path.getmtime(name):
-                    continue
+            name = f"{self.cache_path}/cache/test{prefix}/{idx:04d}.mat"
             x, y, d, e = self.generate_test(idx, blind)
             data = {
                 'x': x,
@@ -191,9 +181,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Cache generator for AEC training')
     parser.add_argument('--dataset_path', help='absolute path to dataset',
                         type=str, default='Interspeech_AEC_Challenge_2021')
+    parser.add_argument('--cache_path', help='destination to cache',
+                        type=str, default='output')
     args = parser.parse_args()
 
-    gc = CacheGenerator(args.dataset_path)
+    gc = CacheGenerator(args.dataset_path, args.cache_path)
     gc.cache_train_set()
     gc.cache_test_set()
     gc.cache_blind_test_set()

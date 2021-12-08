@@ -27,15 +27,14 @@ from utils.mat_helpers import save_numpy_to_mat
 
 class TDNAEC:
 
-    def __init__(self, nbatch=25):
+    def __init__(self, nbatch, cache_path):
 
         self.name = os.path.splitext(os.path.basename(sys.argv[0]))[0]  # filename of this script without extension
-        self.file_date = os.path.getmtime(sys.argv[0])  # timestamp of this script
         self.weights_file = '../weights/' + self.name + '_weights.h5'
         self.predictions_file = '../predictions/' + self.name + '.mat'
         self.logfile = self.name + '_logfile.txt'
 
-        self.fgen = FeatureGenerator()
+        self.fgen = FeatureGenerator(cache_path)
         self.logger = Logger(self.name)
         self.samples = self.fgen.samples
         self.silence = self.fgen.silence
@@ -186,21 +185,16 @@ class TDNAEC:
     def train_model(self):
 
         print('train the model')
-        i = 0
-        while (i < self.iterations) and (self.file_date == os.path.getmtime(sys.argv[0])):
-
-            # x,y,d,e,s = self.fgen.load_train(self.nbatch, scenario='doubletalk')
+        for i in range(self.iterations):
             x, y, d, e, s = self.fgen.load_train(self.nbatch)
             self.model.fit([x, y, d, e, s], None, batch_size=self.nbatch, epochs=1, verbose=0, callbacks=[self.logger])
 
-            i += 1
             if (i % 20) == 0:
                 self.save_prediction()
 
     def test_model(self, ):
 
         print('test the model')
-
         for i in range(self.fgen.blind_test_set_length):
             x, y, d, e, s = self.fgen.load_test_blind(i, self.nbatch)
             z, P = self.model.predict([x, y, d, e, s])
@@ -212,12 +206,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='time-domain neural echo controller')
     parser.add_argument('mode', help='mode: [train, test]', nargs='?', choices=('train', 'test'), default='train')
+    parser.add_argument('--cache_path', help='destination to cache',
+                        type=str, default='output')
     args = parser.parse_args()
 
     if args.mode == 'train':
-        dnn = TDNAEC(nbatch=40)
+        dnn = TDNAEC(nbatch=40, cache_path=args.cache_path)
         dnn.train_model()
 
     if args.mode == 'test':
-        dnn = TDNAEC(nbatch=1)
+        dnn = TDNAEC(nbatch=1, cache_path=args.cache_path)
         dnn.test_model()

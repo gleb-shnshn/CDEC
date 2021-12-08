@@ -13,12 +13,12 @@ Requirements
 ------------
 
 The data loader uses the 'soundfile' package to read/write wavs:
-```
+```bash
 pip install soundfile
 ```
 
 
-Preriquisites
+Prerequisites
 -------------
 
 We use the training data provided for the Acoustic Echo Cancellation Challenge of the Interspeech 2021: 
@@ -29,7 +29,7 @@ We generate doubletalk by mixing the near-end echo with a desired speech signal 
 Further, we add background noise from various youotube sources or the NOIZEUS database: https://ecs.utdallas.edu/loizou/speech/noizeus/
 This allows to freely mix, shift and filter the individual signal components, as discussed in the paper.
 
-Dataset prepearation
+Dataset preparation
 -------------
 To use your own databases, you need to pass it as an argument
 
@@ -58,7 +58,7 @@ Expected structure:
 
 
 Prior to training, you need to create a cache which will perform the linear AEC on 10,000 randomly selected mixtures. This is done with:
-```
+```bash
 cd loaders
 python generate_cache.py --dataset_path ./Interspeech_AEC_Challenge_2021/datasets --cache_path ./output
 ```
@@ -93,7 +93,7 @@ Training
 --------
 
 To train the CDEC model, use:
-```
+```bash
 cd experiments
 python tdnaec_best.py train --cache_path ./output
 ```
@@ -105,7 +105,7 @@ Test
 ----------
 
 To test the model on the blind test set, use:
-```
+```bash
 cd experiments
 python tdnaec_best.py test --cache_path ./output
 ```

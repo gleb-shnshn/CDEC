@@ -38,8 +38,8 @@ class FeatureGenerator:
 
     # scenarios = ['nearend', 'farend', 'doubletalk']
     # modes = ['real','simu','hard']
-    def load_train(self, nbatch=1, mode=None, scenario=None, idx=None, p_modes=[0.3, 0.3, 0.4],
-                   p_scenarios=[0.1, 0.1, 0.8]):
+    def load_train(self, nbatch=1, mode=None, scenario=None, idx=None,
+                   p_modes=(0.3, 0.3, 0.4), p_scenarios=(0.1, 0.1, 0.8)):
 
         mode0 = mode
         scenario0 = scenario
@@ -78,9 +78,8 @@ class FeatureGenerator:
 
         return x, y, d, e, s
 
-    def load_test(self, idx, nbatch=1):
+    def load_from_dir(self, name, nbatch):
 
-        name = self.dataset_dir + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
         data = load_numpy_from_mat(name)
 
         x = data['x'][0, :]  # shape = (1, samples)
@@ -95,24 +94,16 @@ class FeatureGenerator:
         s = np.zeros_like(x)
 
         return x, y, d, e, s
+
+    def load_test(self, idx, nbatch=1):
+
+        name = self.dataset_dir + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
+        return self.load_from_dir(name, nbatch)
 
     def load_test_blind(self, idx, nbatch=1):
 
         name = self.dataset_dir + 'blind_test_cache/' + '{:04d}'.format(idx) + '.mat'
-        data = load_numpy_from_mat(name)
-
-        x = data['x'][0, :]  # shape = (1, samples)
-        y = data['y'][0, :]  # shape = (1, samples)
-        d = data['d'][0, :]  # shape = (1, samples)
-        e = data['e'][0, :]  # shape = (1, samples)
-
-        x = np.stack([x] * nbatch, axis=0)
-        y = np.stack([y] * nbatch, axis=0)
-        d = np.stack([d] * nbatch, axis=0)
-        e = np.stack([e] * nbatch, axis=0)
-        s = np.zeros_like(x)
-
-        return x, y, d, e, s
+        return self.load_from_dir(name, nbatch)
 
     def write_enhanced(self, x, idx, experiment_name):
 
@@ -128,20 +119,8 @@ class FeatureGenerator:
 
         idx = self.aec_loader.find_idx_from_testset('8WdP6ehkpkiy5AHUg0DnNg_doubletalk_with_movement')
         name = self.dataset_dir + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
-        data = load_numpy_from_mat(name)
 
-        x = data['x'][0, :]  # shape = (samples,)
-        y = data['y'][0, :]  # shape = (samples,)
-        d = data['d'][0, :]  # shape = (samples,)
-        e = data['e'][0, :]  # shape = (samples,)
-
-        x = np.stack([x] * nbatch, axis=0)
-        y = np.stack([y] * nbatch, axis=0)
-        d = np.stack([d] * nbatch, axis=0)
-        e = np.stack([e] * nbatch, axis=0)
-        s = np.zeros_like(x)
-
-        return x, y, d, e, s
+        return self.load_from_dir(name, nbatch)
 
     def write_aec_only(self, ):
 

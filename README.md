@@ -31,26 +31,29 @@ This allows to freely mix, shift and filter the individual signal components, as
 
 Dataset prepearation
 -------------
-To use your own databases, you need to change the corresponding paths in './loaders/generate_cache.py' and './loaders/aec_loader.py'
+To use your own databases, you need to pass it as an argument
 
 Expected structure:
 ```
-- dataset_dir
-    - real
-        - lpb
-        - mic
-    - synthetic
-        - lpb
-        - mic
-    - hard
-        - lpb
-        - mic
-    - test
-        - lpb
-        - mic
-    - test_blind
-        - lpb
-        - mic
+- dataset_path
+    - aec
+        - real
+            - lpb
+            - mic
+        - synthetic
+            - lpb
+            - mic
+        - hard
+            - lpb
+            - mic
+        - test
+            - lpb
+            - mic
+        - test_blind
+            - lpb
+            - mic
+    - noise
+    - doubletalk
         
 ```
 
@@ -58,7 +61,7 @@ Expected structure:
 Prior to training, you need to create a cache which will perform the linear AEC on 10,000 randomly selected mixtures. This is done with:
 ```
 cd loaders
-python generate_cache.py
+python generate_cache.py --dataset_path ./Interspeech_AEC_Challenge_2021/datasets
 ```
 
 To change the cache size, the variable 'self.train_set_length = 10000' in './loaders/generate_cache.py' needs to be changed accordingly.

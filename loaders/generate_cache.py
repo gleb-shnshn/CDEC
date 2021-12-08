@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = "Lukas Pfeifenberger"
 
+import argparse
 import os
 import sys
 
@@ -17,11 +18,11 @@ from loaders.audio_loader import AudioLoader
 
 class CacheGenerator:
 
-    def __init__(self, ):
+    def __init__(self, dataset_path):
 
-        self.aec_loader = AECLoader(name='aec_loader')
-        self.dt_loader = AudioLoader(name='doubletalk', path='../../wsj0/si_tr_*/*/')
-        self.noise_loader = AudioLoader(name='noise', path='../../youtube_noise/*/')
+        self.aec_loader = AECLoader(name='aec_loader', dataset_dir=f"{dataset_path}/aec")
+        self.dt_loader = AudioLoader(name='doubletalk', path=f"{dataset_path}/doubletalk")
+        self.noise_loader = AudioLoader(name='noise', path=f"{dataset_path}/noise")
         self.noise_loader.cache_files()
         self.ssaec = SSAECFast(wlen=512, tail_length=0.250)
 
@@ -187,7 +188,12 @@ class CacheGenerator:
 
 
 if __name__ == "__main__":
-    gc = CacheGenerator()
+    parser = argparse.ArgumentParser(description='Cache generator for AEC training')
+    parser.add_argument('--dataset_path', help='absolute path to dataset',
+                        type=str, default='Interspeech_AEC_Challenge_2021')
+    args = parser.parse_args()
+
+    gc = CacheGenerator(args.dataset_path)
     gc.cache_train_set()
     gc.cache_test_set()
     gc.cache_blind_test_set()

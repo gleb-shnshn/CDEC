@@ -9,7 +9,6 @@ import numpy as np
 sys.path.append(os.path.abspath('../'))
 
 from algorithms.audio_processing import create_hanning_window, rfft, irfft, mstft, mistft
-from utils.mat_helpers import save_numpy_to_mat, load_numpy_from_mat
 
 
 # --------------------------------------------------------------------------
@@ -145,19 +144,3 @@ class SSAECFast:
             z = np.concatenate([z, pad])
 
         return z
-
-
-if __name__ == "__main__":
-    ssaec = SSAECFast(wlen=512, tail_length=0.25)
-    data = load_numpy_from_mat('../matlab/aec.mat')
-    x = np.squeeze(data['x'])
-    d = np.squeeze(data['d'])
-    e, y = ssaec.run(x, d, repeats=2)
-
-    data = {
-        'x': x,
-        'd': d,
-        'e': e,
-        'y': y,
-    }
-    save_numpy_to_mat('../matlab/aec.mat', data)

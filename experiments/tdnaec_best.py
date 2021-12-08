@@ -8,7 +8,6 @@ import sys
 import numpy as np
 import tensorflow as tf
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from keras.models import Model

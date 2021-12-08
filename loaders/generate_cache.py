@@ -121,17 +121,11 @@ class CacheGenerator:
 
         return x, y, d, e, s
 
-    def generate_test(self, idx):
-
-        x, d = self.aec_loader.load_test(idx)
-        x = compensate_delay(x, d)
-        e, y = self.ssaec.run(x, d, repeats=2)
-
-        return x, y, d, e
-
-    def generate_blind_test(self, idx):
-
-        x, d = self.aec_loader.load_test_blind(idx)
+    def generate_test(self, idx, blind):
+        if blind:
+            x, d = self.aec_loader.load_test_blind(idx)
+        else:
+            x, d = self.aec_loader.load_test(idx)
         x = compensate_delay(x, d)
         e, y = self.ssaec.run(x, d, repeats=2)
 
@@ -139,9 +133,9 @@ class CacheGenerator:
 
     def cache_train_set(self, ):
 
-        for mode in np.random.permutation(self.modes):
-            for scenario in np.random.permutation(self.scenarios):
-                for idx in np.random.permutation(range(self.train_set_length)):
+        for mode in self.modes:
+            for scenario in self.scenarios:
+                for idx in range(self.train_set_length):
 
                     name = self.dataset_dir + 'train_cache/' + mode + '/' + scenario + '/' + '{:04d}'.format(
                         idx) + '.mat'
@@ -164,16 +158,15 @@ class CacheGenerator:
                     save_numpy_to_mat(name, data)
                     print('writing train file:', idx, '/', self.train_set_length)
 
-    def cache_test_set(self, ):
+    def cache_set(self, length, blind=False):
 
-        for idx in np.random.permutation(range(self.test_set_length)):
-
-            name = self.dataset_dir + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
+        prefix = blind * "blind_"
+        for idx in range(length):
+            name = self.dataset_dir + prefix + 'test_cache/' + '{:04d}'.format(idx) + '.mat'
             if os.path.isfile(name):
                 if self.timestamp < os.path.getmtime(name):
                     continue
-
-            x, y, d, e = self.generate_test(idx)
+            x, y, d, e = self.generate_test(idx, blind)
             data = {
                 'x': x,
                 'y': y,
@@ -184,29 +177,13 @@ class CacheGenerator:
             }
             mkdir(name)
             save_numpy_to_mat(name, data)
-            print('writing test file:', idx, '/', self.test_set_length)
+            print('writing ' + prefix + 'test file:', idx, '/', length)
 
-    def cache_blind_test_set(self, ):
+    def cache_test_set(self):
+        self.cache_set(self.test_set_length, blind=False)
 
-        for idx in np.random.permutation(range(self.blind_test_set_length)):
-
-            name = self.dataset_dir + 'blind_test_cache/' + '{:04d}'.format(idx) + '.mat'
-            if os.path.isfile(name):
-                if self.timestamp < os.path.getmtime(name):
-                    continue
-
-            x, y, d, e = self.generate_blind_test(idx)
-            data = {
-                'x': x,
-                'y': y,
-                'd': d,
-                'e': e,
-                'fs': self.fs,
-                'idx': idx,
-            }
-            mkdir(name)
-            save_numpy_to_mat(name, data)
-            print('writing blind test file:', idx, '/', self.blind_test_set_length)
+    def cache_blind_test_set(self):
+        self.cache_set(self.blind_test_set_length, blind=True)
 
 
 if __name__ == "__main__":

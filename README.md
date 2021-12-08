@@ -28,8 +28,31 @@ For training, we only use the separated far-end and near-end echo files.
 We generate doubletalk by mixing the near-end echo with a desired speech signal from the WSJ0 database: https://catalog.ldc.upenn.edu/LDC93S6A
 Further, we add background noise from various youotube sources or the NOIZEUS database: https://ecs.utdallas.edu/loizou/speech/noizeus/
 This allows to freely mix, shift and filter the individual signal components, as discussed in the paper.
+
+Dataset prepearation
+-------------
 To use your own databases, you need to change the corresponding paths in './loaders/generate_cache.py' and './loaders/aec_loader.py'
 
+Expected structure:
+```
+- dataset_dir
+    - real
+        - lpb
+        - mic
+    - synthetic
+        - lpb
+        - mic
+    - hard
+        - lpb
+        - mic
+    - test
+        - lpb
+        - mic
+    - test_blind
+        - lpb
+        - mic
+        
+```
 
 
 Prior to training, you need to create a cache which will perform the linear AEC on 10,000 randomly selected mixtures. This is done with:

@@ -29,8 +29,8 @@ class FeatureGenerator:
         self.scenarios = ['nearend', 'farend', 'doubletalk']
         self.modes = ['real', 'simu', 'hard']
         self.train_set_length = 5000
-        self.test_set_length = len(self.aec_loader.d_test)
-        self.blind_test_set_length = len(self.aec_loader.d_test_blind)
+        self.test_set_length = len(self.aec_loader.test)
+        self.blind_test_set_length = len(self.aec_loader.test_blind)
 
         self.nband = 25
         self.Q_long = create_mel_filterbank(nbin=513, fs=16e3, nband=self.nband)

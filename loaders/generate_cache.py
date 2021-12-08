@@ -35,8 +35,8 @@ class CacheGenerator:
         self.scenarios = ['nearend', 'farend', 'doubletalk']
         self.modes = ['real', 'simu', 'hard']
         self.train_set_length = 10000
-        self.test_set_length = len(self.aec_loader.d_test)
-        self.blind_test_set_length = len(self.aec_loader.d_test_blind)
+        self.test_set_length = len(self.aec_loader.test)
+        self.blind_test_set_length = len(self.aec_loader.test_blind)
 
     def pad_files(self, x, d):
 

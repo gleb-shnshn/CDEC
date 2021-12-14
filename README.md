@@ -40,7 +40,7 @@ Expected structure:
         - real
             - lpb
             - mic
-        - synthetic
+        - simu
             - lpb
             - mic
         - hard

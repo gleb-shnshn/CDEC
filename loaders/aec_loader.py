@@ -25,7 +25,7 @@ class AECLoader:
         self.train_real = self.get_content_of_dir(dataset_dir, "real")
 
         # load train_simu files
-        self.train_simu = self.get_content_of_dir(dataset_dir, "synthetic")
+        self.train_simu = self.get_content_of_dir(dataset_dir, "simu")
 
         # load train_hard files
         self.train_hard = self.get_content_of_dir(dataset_dir, "hard")
@@ -68,7 +68,7 @@ class AECLoader:
             return self.load_train_dataset("real", self.train_real, idx)
 
         elif mode == 'simu':
-            return self.load_train_dataset("synthetic", self.train_simu, idx)
+            return self.load_train_dataset("simu", self.train_simu, idx)
 
         elif mode == 'hard':
             return self.load_train_dataset("hard", self.train_hard, idx)

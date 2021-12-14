@@ -103,20 +103,12 @@ class AECLoader:
         d *= G
         return x, d
 
-    def load_test(self, idx):
-
-        return self.load_from("test", self.test, idx)
-
-    def load_test_blind(self, idx):
-
-        return self.load_from("test_blind", self.test_blind, idx)
-
     def write_enhanced(self, x, idx, subfolder, dataset):
 
         G = 0.99 / np.max(np.abs(x))
         x *= np.minimum(G, 1)
 
-        name = f"{self.dataset_dir}/submission/{subfolder}/{dataset[idx]}"
+        name = f"{self.dataset_dir}/submission/{subfolder}/{dataset[idx].replace('.wav', '_enh.wav')}"
         mkdir(name)
         audiowrite(x, name)
 

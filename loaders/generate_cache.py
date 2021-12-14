@@ -2,10 +2,10 @@
 __author__ = "Lukas Pfeifenberger"
 
 import argparse
-import os
 import sys
 
 import numpy as np
+import os
 
 sys.path.append(os.path.abspath('../'))
 
@@ -120,17 +120,14 @@ class CacheGenerator:
 
         return x, y, d, e, s
 
-    def generate_test(self, idx, path):
-        if path == "test_blind":
-            x, d = self.aec_loader.load_test_blind(idx)
-        else:
-            x, d = self.aec_loader.load_test(idx)
+    def generate_test(self, idx, path, dataset):
+        x, d = self.aec_loader.load_from(path, dataset, idx)
         x = compensate_delay(x, d)
         e, y = self.ssaec.run(x, d, repeats=2)
 
         return x, y, d, e
 
-    def cache_train_set(self, ):
+    def cache_train_set(self):
 
         for mode in self.modes:
             for scenario in self.scenarios:
@@ -152,11 +149,11 @@ class CacheGenerator:
                     save_numpy_to_mat(name, data)
                     print('writing train file:', idx, '/', self.train_set_length)
 
-    def cache_set(self, length, path):
+    def cache_test(self, length, path, dataset):
 
         for idx in range(length):
             name = f"{self.cache_path}/cache/{path}/{idx:04d}.mat"
-            x, y, d, e = self.generate_test(idx, path)
+            x, y, d, e = self.generate_test(idx, path, dataset)
             data = {
                 'x': x,
                 'y': y,
@@ -170,10 +167,10 @@ class CacheGenerator:
             print('writing ' + path + ' file:', idx, '/', length)
 
     def cache_test_set(self):
-        self.cache_set(self.test_set_length, "test")
+        self.cache_test(self.test_set_length, "test", self.aec_loader.test)
 
     def cache_blind_test_set(self):
-        self.cache_set(self.blind_test_set_length, "test_blind")
+        self.cache_test(self.blind_test_set_length, "test_blind", self.aec_loader.test_blind)
 
 
 if __name__ == "__main__":

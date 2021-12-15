@@ -2,6 +2,7 @@
 __author__ = "Lukas Pfeifenberger"
 
 import argparse
+import math
 import sys
 
 import numpy as np
@@ -18,7 +19,7 @@ from loaders.audio_loader import AudioLoader
 
 class CacheGenerator:
 
-    def __init__(self, dataset_path, cache_path):
+    def __init__(self, dataset_path, cache_path, train_length):
         self.cache_path = cache_path
         self.aec_loader = AECLoader(name='aec_loader', dataset_dir=f"{dataset_path}/aec")
         self.dt_loader = AudioLoader(name='doubletalk', path=f"{dataset_path}/doubletalk")
@@ -27,55 +28,54 @@ class CacheGenerator:
         self.ssaec = SSAECFast(wlen=512, tail_length=0.250)
 
         self.fs = self.aec_loader.fs
-        self.samples = int(self.fs * 15)
-        self.silence = int(self.fs * 5)
+        self.samples = self.seconds(15)
+        self.silence = self.seconds(5)
 
         self.dataset_dir = self.aec_loader.dataset_dir
         self.scenarios = ['nearend', 'farend', 'doubletalk']
         self.modes = ['real', 'simu', 'hard']
-        self.train_set_length = 10000
+        self.train_set_length = train_length
         self.test_set_length = len(self.aec_loader.test)
         self.blind_test_set_length = len(self.aec_loader.test_blind)
 
-    def pad_files(self, x, d):
+    def seconds(self, n):
+        return int(self.fs * n)
+
+    def repeat_and_trim_files(self, x, d):
 
         samples = len(x)
-        x0 = np.zeros((self.samples,), dtype=np.float32)
-        d0 = np.zeros((self.samples,), dtype=np.float32)
+        rp = math.ceil(self.samples / samples)
+        return np.tile(x, rp)[:self.samples], \
+               np.tile(d, rp)[:self.samples]
 
-        if samples > self.samples:
-            x0 = x[-self.samples:]
-            d0 = d[-self.samples:]
-        else:
-            n = 0
-            while n < self.samples:
-                n1 = min(n + samples, self.samples)
-                x0[n:n1] = x[0:n1 - n]
-                d0[n:n1] = d[0:n1 - n]
-                n = n1
+    def delay_x(self, x):
+        samples3 = self.samples // 3
+        # create artificial delay changes by shifting the last third randomly
+        lag = int(np.random.uniform(-0.020, 0) * self.fs)
+        x[2 * samples3:self.samples] = np.roll(x[2 * samples3:self.samples], lag)
+        return x
 
-        return x0, d0
+    def attenuate_and_clip_d(self, d):
+        samples3 = self.samples // 3
+        # randomly attenuate microphone signal in the middle third
+        G = np.ones((self.samples,), dtype=np.float32)
+        G[samples3:2 * samples3] = np.power(10, np.random.uniform(0, -40) / 20)
+        d = d * G
+
+        # randomly add clipping
+        G = np.power(10, np.random.uniform(0, +12) / 20)
+        d = np.clip(d * G, -1, +1) / G
+        return d
 
     def generate_train(self, mode, scenario, idx):
 
         x, d = self.aec_loader.load_train(mode, idx)
-        x, d = self.pad_files(x, d)
-        samples3 = self.samples // 3
+        x, d = self.repeat_and_trim_files(x, d)
 
         if mode == 'simu':
-            # create artificial delay changes by shifting the last third randomly
-            lag = int(np.random.uniform(-0.020, 0) * self.fs)
-            x[2 * samples3:self.samples] = np.roll(x[2 * samples3:self.samples], lag)
-
+            x = self.delay_x(x)
         if mode in ['simu', 'real']:
-            # randomly attenuate microphone signal in the middle third
-            G = np.ones((self.samples,), dtype=np.float32)
-            G[samples3:2 * samples3] = np.power(10, np.random.uniform(0, -40) / 20)
-            d = d * G
-
-            # randomly add clipping
-            G = np.power(10, np.random.uniform(0, +12) / 20)
-            d = np.clip(d * G, -1, +1) / G
+            d = self.attenuate_and_clip_d(d)
 
         # load doubletalk
         s = self.dt_loader.load_random_files(samples=self.samples, offset=self.silence)
@@ -98,14 +98,11 @@ class CacheGenerator:
         # simulate scenario
         if scenario == 'nearend':
             x = np.zeros_like(d)
-            d = s + n
 
         if scenario == 'farend':
             s = np.zeros_like(d)
-            d = d + n
 
-        if scenario == 'doubletalk':
-            d = d + s + n
+        d = d + s + n
 
         # compensate bulk delay
         x = compensate_delay(x, d)
@@ -114,6 +111,7 @@ class CacheGenerator:
         start = np.random.choice(self.samples)
         x0 = np.roll(x, start)
         d0 = np.roll(d, start)
+
         e, y = self.ssaec.run(x0, d0, repeats=2)
         e = np.roll(e, -start)
         y = np.roll(y, -start)
@@ -179,9 +177,11 @@ if __name__ == "__main__":
                         type=str, default='Interspeech_AEC_Challenge_2021')
     parser.add_argument('--cache_path', help='destination to cache',
                         type=str, default='output')
+    parser.add_argument('--train_length', help='number of samples for train',
+                        type=int, default=10000)
     args = parser.parse_args()
 
-    gc = CacheGenerator(args.dataset_path, args.cache_path)
+    gc = CacheGenerator(args.dataset_path, args.cache_path, args.train_length)
     gc.cache_train_set()
     gc.cache_test_set()
     gc.cache_blind_test_set()
